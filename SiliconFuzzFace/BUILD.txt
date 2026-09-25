@@ -1,0 +1,34 @@
+Silicon Fuzz Face — build on macOS (GarageBand + other DAWs)
+===========================================================
+
+Needs: macOS, Xcode (App Store), CMake 3.22+, Git.
+
+1. Install CMake if needed:
+     brew install cmake
+
+2. In Terminal, from this folder:
+
+     cmake -B build -G Xcode
+     cmake --build build --config Release
+
+   First run downloads JUCE 8 and takes several minutes.
+
+3. After a successful build, plugins are copied to:
+     ~/Library/Audio/Plug-Ins/Components/Silicon Fuzz Face.component   (GarageBand / Logic)
+     ~/Library/Audio/Plug-Ins/VST3/Silicon Fuzz Face.vst3              (Reaper, Ableton, Cubase…)
+
+4. GarageBand
+     Settings → Audio/MIDI → enable Audio Units
+     Smart Controls → plugin slot → Audio Units → Grok Audio → Silicon Fuzz Face
+
+5. If GarageBand does not see it:
+     auval -v aufx SiFF GrkA
+     Then reboot GarageBand. On newer macOS you may need to
+     codesign the .component (Apple Developer ID) for it to load.
+
+Knobs
+  FUZZ   — 1k emitter pot (Q2 drive)
+  VOL    — 500k output pot
+  INPUT  — guitar / pickup level (roll this back like a guitar volume)
+
+Put this first on a guitar track. It is a mono circuit (stereo is summed).
