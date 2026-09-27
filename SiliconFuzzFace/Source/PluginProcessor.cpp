@@ -28,17 +28,44 @@ SiliconFuzzFaceAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fuzz", 1 }, "Fuzz",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.65f));
+    const auto range = juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f);
+
+    const auto percentText = [] (float v, int)
+    {
+        return juce::String (juce::roundToInt (v * 100.0f)) + "%";
+    };
+    const auto percentParse = [] (const juce::String& t)
+    {
+        return t.getFloatValue() / 100.0f;
+    };
+
+    // Names + categories are what Logic / GarageBand read when they
+    // list AU parameters (automation, generic view). Smart Controls
+    // on a guitar track still use Apple's fixed skin.
+    auto fuzzAttr = juce::AudioParameterFloatAttributes()
+        .withLabel ("%")
+        .withCategory (juce::AudioProcessorParameter::genericParameter)
+        .withStringFromValueFunction (percentText)
+        .withValueFromStringFunction (percentParse);
+
+    auto volAttr = juce::AudioParameterFloatAttributes()
+        .withLabel ("%")
+        .withCategory (juce::AudioProcessorParameter::outputGain)
+        .withStringFromValueFunction (percentText)
+        .withValueFromStringFunction (percentParse);
+
+    auto inAttr = juce::AudioParameterFloatAttributes()
+        .withLabel ("%")
+        .withCategory (juce::AudioProcessorParameter::inputGain)
+        .withStringFromValueFunction (percentText)
+        .withValueFromStringFunction (percentParse);
 
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "volume", 1 }, "Volume",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.55f));
-
+        juce::ParameterID { "fuzz", 1 }, "Fuzz", range, 0.65f, fuzzAttr));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "input", 1 }, "Input",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.7f));
+        juce::ParameterID { "volume", 1 }, "Volume", range, 0.55f, volAttr));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "input", 1 }, "Input", range, 0.7f, inAttr));
 
     return { params.begin(), params.end() };
 }

@@ -31,4 +31,10 @@ Knobs
   VOL    — 500k output pot
   INPUT  — guitar / pickup level (roll this back like a guitar volume)
 
+GarageBand Smart Controls
+  The blue guitar-track panel is Apple's skin (one Fuzz knob + track EQ + sends).
+  A third-party Audio Unit cannot replace that layout.
+  All three knobs are in the real editor: wrench next to Controls / EQ.
+  Track automation also lists Fuzz, Volume and Input.
+
 Put this first on a guitar track. It is a mono circuit (stereo is summed).
