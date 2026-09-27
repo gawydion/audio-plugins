@@ -3,6 +3,23 @@
 Audio plugins published by **Grok Audio** (bundle prefix `audio.grok.*`, AU/VST3
 manufacturer code `GrkA`).
 
+## Downloads
+
+Prebuilt, ready-to-share VST3 archives live in [`downloads/`](downloads/) (git
+ignored, so binaries stay out of the repo). Unzip into
+`~/Library/Audio/Plug-Ins/VST3/` on a Mac, then rescan in your DAW.
+
+| Archive | Plugin |
+| --- | --- |
+| `Silicon Fuzz Face.vst3.zip` | Silicon Fuzz Face |
+
+The bundles are universal (`arm64` + `x86_64`) but ad-hoc signed, so Gatekeeper
+may block them on first open. Either right-click the unzipped bundle → Open, or
+run `xattr -dr com.apple.quarantine "Silicon Fuzz Face.vst3"`. A Developer ID
+signature removes this step.
+
+## Source
+
 Each plugin is a self-contained JUCE 8 project in its own subdirectory:
 
 | Plugin | Directory | CMake target | AU code | Formats |
