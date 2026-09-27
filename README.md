@@ -5,18 +5,21 @@ manufacturer code `GrkA`).
 
 ## Downloads
 
-Prebuilt, ready-to-share VST3 archives live in [`downloads/`](downloads/) (git
-ignored, so binaries stay out of the repo). Unzip into
-`~/Library/Audio/Plug-Ins/VST3/` on a Mac, then rescan in your DAW.
+Prebuilt, ready-to-share archives live in [`downloads/`](downloads/).
 
-| Archive | Plugin |
-| --- | --- |
-| `Silicon Fuzz Face.vst3.zip` | Silicon Fuzz Face |
+| Archive | Plugin | Install to |
+| --- | --- | --- |
+| `Silicon Fuzz Face.vst3.zip` | Silicon Fuzz Face (VST3) | `~/Library/Audio/Plug-Ins/VST3/` |
+| `Silicon Fuzz Face.component.zip` | Silicon Fuzz Face (Audio Unit) | `~/Library/Audio/Plug-Ins/Components/` |
+
+Unzip, then rescan plugins in your DAW. GarageBand and Logic load the
+`.component`; Reaper, Ableton and Cubase take the `.vst3` (GarageBand does not
+load VST3).
 
 The bundles are universal (`arm64` + `x86_64`) but ad-hoc signed, so Gatekeeper
 may block them on first open. Either right-click the unzipped bundle → Open, or
-run `xattr -dr com.apple.quarantine "Silicon Fuzz Face.vst3"`. A Developer ID
-signature removes this step.
+run `xattr -dr com.apple.quarantine "Silicon Fuzz Face.vst3"` (or
+`"Silicon Fuzz Face.component"`). A Developer ID signature removes this step.
 
 ## Source
 
