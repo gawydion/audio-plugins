@@ -2,9 +2,6 @@
 build/
 cmake-build-*/
 
-# Shareable plugin archives
-downloads/
-
 # IDE
 .idea/
 *.xcodeproj/
