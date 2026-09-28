@@ -11,6 +11,8 @@ Prebuilt, ready-to-share archives live in [`downloads/`](downloads/).
 | --- | --- | --- |
 | `Silicon Fuzz Face.vst3.zip` | Silicon Fuzz Face (VST3) | `~/Library/Audio/Plug-Ins/VST3/` |
 | `Silicon Fuzz Face.component.zip` | Silicon Fuzz Face (Audio Unit) | `~/Library/Audio/Plug-Ins/Components/` |
+| `Russian Big Muff.vst3.zip` | Russian Big Muff (VST3) | `~/Library/Audio/Plug-Ins/VST3/` |
+| `Russian Big Muff.component.zip` | Russian Big Muff (Audio Unit) | `~/Library/Audio/Plug-Ins/Components/` |
 
 Unzip, then rescan plugins in your DAW. GarageBand and Logic load the
 `.component`; Reaper, Ableton and Cubase take the `.vst3` (GarageBand does not
@@ -29,6 +31,7 @@ Each plugin is a self-contained JUCE 8 project in its own subdirectory:
 | --- | --- | --- | --- | --- |
 | Silicon Fuzz Face | [`SiliconFuzzFace/`](SiliconFuzzFace/) | `SiliconFuzzFace` | `SiFF` | AU, VST3, Standalone |
 | Brown Eye OD | [`FriedmanBEOD/`](FriedmanBEOD/) | `BrownEyeOD` | `BeOD` | AU, VST3, Standalone |
+| Russian Big Muff | [`RussianBigMuff/`](RussianBigMuff/) | `RussianBigMuff` | `RuBM` | AU, VST3, Standalone |
 
 Note the mismatch in Brown Eye OD: the directory is `FriedmanBEOD` (a BE-OD
 name) while the target, bundle ID and product name all use `BrownEyeOD` /
@@ -71,6 +74,40 @@ Mono circuit: stereo input is summed, output copied to all channels. Intended
 for the front of a guitar track into a clean or edge-of-breakup amp sim; 9–18 V
 headroom is not modelled, the `Trim` knob covers the same job.
 
+## Russian Big Muff
+
+Green Russian / Sovtek Big Muff (the Kit Rae V7C layout), in
+[`RussianBigMuff/`](RussianBigMuff/). Four NPN stages — Q1 KT3102E input
+amplifier, Q2 2N5088 + D1/D2, Q3 BC549C + D3/D4 (KD521 / 1N914 silicon) — with
+390Ω emitters, which is the lower gain and smoothness that separate it from a
+New York City Muff. The whole audio path lives in `Source/rbm_core.c`.
+
+Signal path, per mono sample: input level taper and pickup load lowpass, then
+Q1 as a high-ceiling amplifier that puts voltage on the pot rather than
+clipping, the Sustain pot, then two clip stages of 12k/(390+re') ≈ 28 each. The
+clip stages are coupled through 47nF, so a little bass goes around the diodes
+while the highs take the silicon edge — that coupling is the Russian's
+signature. Feedback is local to each stage, a 470k collector-to-base resistor
+with 470pF across it, rolling each stage off around 28–34kHz; there is no
+global feedback path and no loop to keep stable. The passive tone stack
+follows, then Q4 recovery, the output high-pass and the volume pot. Runs 2x
+oversampled.
+
+- `Sustain` — the 100k linear pot between Q1 and the first clipper; it never
+  quite shuts off
+- `Tone` — passive stack between Q3 and Q4, a 20k + 3.9nF low-pass (≈2040Hz)
+  and a 22k + 10nF high-pass (≈723Hz) crossfaded by a 100k pot: CCW bass, noon
+  mid scoop, CW treble
+- `Volume` — 100k output pot
+- `Input` — guitar/pickup level, not on the pedal; this circuit wants a hot
+  signal
+
+Output is level-matched low and intended as the front of a guitar track into a
+clean or edge-of-breakup amp sim. The gain staging is hot by design, so with
+Volume near maximum the last clip stage and the tone-stack makeup can push the
+output past full scale — leave headroom on the amp and expect the host to clip
+the peaks.
+
 ## Building
 
 Requires macOS, CMake 3.22+, Git, and the Xcode Command Line Tools
@@ -78,7 +115,7 @@ Requires macOS, CMake 3.22+, Git, and the Xcode Command Line Tools
 configure.
 
 ```sh
-cd SiliconFuzzFace   # or: cd FriedmanBEOD
+cd SiliconFuzzFace   # or: cd FriedmanBEOD / cd RussianBigMuff
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j"$(sysctl -n hw.ncpu)"
 ```
@@ -95,7 +132,7 @@ plug-in folders automatically (`COPY_PLUGIN_AFTER_BUILD`):
 - `~/Library/Audio/Plug-Ins/VST3/` — VST3 (Reaper, Ableton, Cubase…)
 
 Builds are universal (`arm64` + `x86_64`) with a macOS 11.0 deployment target.
-Each plugin builds and installs independently; both share the `GrkA`
+Each plugin builds and installs independently; all three share the `GrkA`
 manufacturer code but use distinct plugin codes, so they can be installed side
 by side.
 
@@ -104,6 +141,7 @@ by side.
 ```sh
 auval -v aufx SiFF GrkA   # Silicon Fuzz Face
 auval -v aufx BeOD GrkA   # Brown Eye OD
+auval -v aufx RuBM GrkA   # Russian Big Muff
 ```
 
 In GarageBand: Settings → Audio/MIDI → enable Audio Units, then
