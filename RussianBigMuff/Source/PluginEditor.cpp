@@ -4,42 +4,42 @@ void RussianBigMuffLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int 
                                                   float sliderPos, float rotaryStartAngle, float rotaryEndAngle,
                                                   juce::Slider&)
 {
-    const auto bounds = juce::Rectangle<float> ((float) x, (float) y, (float) width, (float) height).reduced (6.0f);
+    const auto bounds = juce::Rectangle<float> ((float) x, (float) y, (float) width, (float) height).reduced (5.0f);
     const auto radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.5f;
     const auto centre = bounds.getCentre();
     const auto angle  = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
-    g.setColour (juce::Colour (0xff14180f));
+    g.setColour (juce::Colour (0xff1a1c14));
     g.fillEllipse (centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f);
 
-    g.setColour (juce::Colour (0xffd9d2b4));
-    g.fillEllipse (centre.x - radius + 4.0f, centre.y - radius + 4.0f,
-                   radius * 2.0f - 8.0f, radius * 2.0f - 8.0f);
+    g.setColour (juce::Colour (0xffc4b896));
+    g.fillEllipse (centre.x - radius + 3.5f, centre.y - radius + 3.5f,
+                   radius * 2.0f - 7.0f, radius * 2.0f - 7.0f);
 
-    g.setColour (juce::Colour (0xff2f3324).withAlpha (0.35f));
-    for (int i = 0; i < 8; ++i)
+    g.setColour (juce::Colour (0xff3a3c28).withAlpha (0.32f));
+    for (int i = 0; i < 10; ++i)
     {
-        const float a = (float) i / 8.0f * juce::MathConstants<float>::twoPi;
+        const float a = (float) i / 10.0f * juce::MathConstants<float>::twoPi;
         g.drawLine (centre.x, centre.y,
-                    centre.x + std::cos (a) * (radius - 8.0f),
-                    centre.y + std::sin (a) * (radius - 8.0f), 1.0f);
+                    centre.x + std::cos (a) * (radius - 7.0f),
+                    centre.y + std::sin (a) * (radius - 7.0f), 1.0f);
     }
 
     juce::Path pointer;
-    const float pointerLen = radius - 10.0f;
-    pointer.addRoundedRectangle (-2.0f, -pointerLen, 4.0f, pointerLen * 0.72f, 1.5f);
-    g.setColour (juce::Colour (0xff23261a));
+    const float pointerLen = radius - 9.0f;
+    pointer.addRoundedRectangle (-1.8f, -pointerLen, 3.6f, pointerLen * 0.70f, 1.2f);
+    g.setColour (juce::Colour (0xff1c1e14));
     g.fillPath (pointer, juce::AffineTransform::rotation (angle).translated (centre.x, centre.y));
 
-    g.setColour (juce::Colour (0xffc8b23c));
-    g.fillEllipse (centre.x - 5.0f, centre.y - 5.0f, 10.0f, 10.0f);
+    g.setColour (juce::Colour (0xff6b8f3a));
+    g.fillEllipse (centre.x - 4.5f, centre.y - 4.5f, 9.0f, 9.0f);
 }
 
 RussianBigMuffAudioProcessorEditor::RussianBigMuffAudioProcessorEditor (RussianBigMuffAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
     setLookAndFeel (&lnf);
-    setSize (460, 290);
+    setSize (480, 280);
 
     auto setupKnob = [this] (juce::Slider& s, juce::Label& l, const juce::String& name)
     {
@@ -51,8 +51,8 @@ RussianBigMuffAudioProcessorEditor::RussianBigMuffAudioProcessorEditor (RussianB
 
         l.setText (name, juce::dontSendNotification);
         l.setJustificationType (juce::Justification::centred);
-        l.setColour (juce::Label::textColourId, juce::Colour (0xfff0e6d2));
-        l.setFont (juce::Font (juce::FontOptions (14.0f)).boldened());
+        l.setColour (juce::Label::textColourId, juce::Colour (0xffe8e0c4));
+        l.setFont (juce::Font (juce::FontOptions (13.0f)).boldened());
         addAndMakeVisible (l);
     };
 
@@ -61,15 +61,21 @@ RussianBigMuffAudioProcessorEditor::RussianBigMuffAudioProcessorEditor (RussianB
     setupKnob (volumeSlider,  volumeLabel,  "VOL");
     setupKnob (inputSlider,   inputLabel,   "INPUT");
 
-    titleLabel.setText ("GREEN RUSSIAN", juce::dontSendNotification);
+    titleLabel.setText ("RUSSIAN BIG MUFF", juce::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
-    titleLabel.setColour (juce::Label::textColourId, juce::Colour (0xfff4ead8));
-    titleLabel.setFont (juce::Font (juce::FontOptions (20.0f)).boldened());
+    titleLabel.setColour (juce::Label::textColourId, juce::Colour (0xffefe6c8));
+    titleLabel.setFont (juce::Font (juce::FontOptions (22.0f)).boldened());
     addAndMakeVisible (titleLabel);
 
+    subLabel.setText ("Sovtek Green Russian  ·  Grok Audio", juce::dontSendNotification);
+    subLabel.setJustificationType (juce::Justification::centred);
+    subLabel.setColour (juce::Label::textColourId, juce::Colour (0xffa8b07a));
+    subLabel.setFont (juce::Font (juce::FontOptions (12.0f)));
+    addAndMakeVisible (subLabel);
+
     sustainAttach = std::make_unique<Attachment> (processor.apvts, "sustain", sustainSlider);
-    volumeAttach  = std::make_unique<Attachment> (processor.apvts, "volume",  volumeSlider);
     toneAttach    = std::make_unique<Attachment> (processor.apvts, "tone",    toneSlider);
+    volumeAttach  = std::make_unique<Attachment> (processor.apvts, "volume",  volumeSlider);
     inputAttach   = std::make_unique<Attachment> (processor.apvts, "input",   inputSlider);
 }
 
@@ -82,36 +88,37 @@ void RussianBigMuffAudioProcessorEditor::paint (juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
-    g.setColour (juce::Colour (0xff2b3222));
-    g.fillRoundedRectangle (bounds, 16.0f);
+    g.setColour (juce::Colour (0xff2a3320));
+    g.fillRoundedRectangle (bounds, 14.0f);
 
-    g.setColour (juce::Colour (0xff39412c));
-    g.fillRoundedRectangle (bounds.reduced (10.0f, 10.0f).removeFromTop (52.0f), 8.0f);
+    g.setColour (juce::Colour (0xff3d4a28));
+    g.fillRoundedRectangle (bounds.reduced (10.0f).removeFromTop (58.0f), 8.0f);
 
-    g.setColour (juce::Colour (0xff4a5340));
-    g.drawRoundedRectangle (bounds.reduced (1.5f), 16.0f, 3.0f);
+    g.setColour (juce::Colour (0xff8a9a4a).withAlpha (0.55f));
+    g.drawRoundedRectangle (bounds.reduced (2.0f), 14.0f, 1.6f);
 }
 
 void RussianBigMuffAudioProcessorEditor::resized()
 {
-    auto r = getLocalBounds().reduced (18);
-    titleLabel.setBounds (r.removeFromTop (44));
-    r.removeFromTop (12);
+    auto r = getLocalBounds().reduced (16);
+    titleLabel.setBounds (r.removeFromTop (32));
+    subLabel.setBounds (r.removeFromTop (18));
+    r.removeFromTop (10);
 
-    const int knob = 124;
-    auto row = r.removeFromTop (knob + 24);
-    const int gap = (row.getWidth() - knob * 4) / 5;
+    const int knob = 96;
+    const int labelH = 20;
+    auto row = r.removeFromTop (knob + labelH);
+    const int count = 4;
+    const int gap = (row.getWidth() - knob * count) / (count + 1);
 
-    auto place = [&] (juce::Slider& s, juce::Label& l)
+    juce::Slider* sliders[] = { &sustainSlider, &toneSlider, &volumeSlider, &inputSlider };
+    juce::Label*  labels[]  = { &sustainLabel,  &toneLabel,  &volumeLabel,  &inputLabel };
+
+    for (int i = 0; i < count; ++i)
     {
         row.removeFromLeft (gap);
         auto cell = row.removeFromLeft (knob);
-        s.setBounds (cell.removeFromTop (knob));
-        l.setBounds (cell);
-    };
-
-    place (sustainSlider, sustainLabel);
-    place (toneSlider,    toneLabel);
-    place (volumeSlider,  volumeLabel);
-    place (inputSlider,   inputLabel);
+        sliders[i]->setBounds (cell.removeFromTop (knob));
+        labels[i]->setBounds (cell);
+    }
 }

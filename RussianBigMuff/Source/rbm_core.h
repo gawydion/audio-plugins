@@ -10,23 +10,6 @@
  *   Feedback   470 pF on each gain stage
  *   Tone       20 k + 3.9 nF  ||  22 k + 10 nF, 100 k lin pot
  *
- * Stage order, per sample:
- *   input gain → pickup LPF → input HPF
- *   → Q1 buffer (modest gain, soft sat)
- *   → Sustain pot (never shuts off)
- *   → Q2 + D1/D2, 47 nF bass bypass, 470 pF roll
- *   → Q3 + D3/D4, more smash
- *   → tone stack (1-t)·LPF + t·HPF
- *   → Q4 recovery → output HPF
- *   → volume
- *
- * No global feedback path: each stage's feedback is local
- * (collector-to-base with its 470 pF), so there is no loop to stabilise.
- *
- * Tone is a passive pot crossfade between two fixed filters, so the
- * filter coefficients never change with the knob. No per-block
- * coefficient update is needed; rbm_process is safe to call per sample.
- *
  * Write DSP here. JUCE only wraps AU / VST3 / the editor.
  */
 

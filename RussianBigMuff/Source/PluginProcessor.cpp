@@ -8,7 +8,6 @@ RussianBigMuffAudioProcessor::RussianBigMuffAudioProcessor()
       apvts (*this, nullptr, "PARAMS", createParameterLayout())
 {
     rbm_init (&core);
-
     sustainParam = apvts.getRawParameterValue ("sustain");
     toneParam    = apvts.getRawParameterValue ("tone");
     volumeParam  = apvts.getRawParameterValue ("volume");
@@ -20,7 +19,7 @@ RussianBigMuffAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
-    auto norm = juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f);
+    const auto range = juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f);
 
     const auto percentText = [] (float v, int)
     {
@@ -31,9 +30,6 @@ RussianBigMuffAudioProcessor::createParameterLayout()
         return t.getFloatValue() / 100.0f;
     };
 
-    // Names + categories are what Logic / GarageBand read when they
-    // list AU parameters (automation, generic view). Smart Controls
-    // on a guitar track still use Apple's fixed skin.
     auto attr = [&] (juce::AudioProcessorParameter::Category cat)
     {
         return juce::AudioParameterFloatAttributes()
@@ -45,34 +41,25 @@ RussianBigMuffAudioProcessor::createParameterLayout()
 
     using Cat = juce::AudioProcessorParameter;
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "sustain", 1 }, "Sustain", norm, 0.70f, attr (Cat::genericParameter)));
+        juce::ParameterID { "sustain", 1 }, "Sustain", range, 0.62f, attr (Cat::genericParameter)));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "tone", 1 }, "Tone", norm, 0.50f, attr (Cat::genericParameter)));
+        juce::ParameterID { "tone", 1 }, "Tone", range, 0.48f, attr (Cat::genericParameter)));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "volume", 1 }, "Volume", norm, 0.50f, attr (Cat::outputGain)));
+        juce::ParameterID { "volume", 1 }, "Volume", range, 0.52f, attr (Cat::outputGain)));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "input", 1 }, "Input", norm, 0.60f, attr (Cat::inputGain)));
+        juce::ParameterID { "input", 1 }, "Input", range, 0.70f, attr (Cat::inputGain)));
 
     return { params.begin(), params.end() };
 }
 
 void RussianBigMuffAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    juce::dsp::ProcessSpec spec;
-    spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = (juce::uint32) samplesPerBlock;
-    spec.numChannels = 1;
+    currentSampleRate = sampleRate;
 
     oversampling.initProcessing ((size_t) samplesPerBlock);
 
-    osRate = sampleRate * (double) oversampling.getOversamplingFactor();
-    spec.sampleRate = osRate;
-    spec.maximumBlockSize = (juce::uint32) (samplesPerBlock * (int) oversampling.getOversamplingFactor());
-
-    // The core runs at the oversampled rate; 2x is what keeps the
-    // diode edges clean without a WDF.
+    const double osRate = sampleRate * (double) oversampling.getOversamplingFactor();
     rbm_prepare (&core, (float) osRate);
-    rbm_reset (&core);
 
     setLatencySamples ((int) oversampling.getLatencyInSamples());
 }
@@ -80,6 +67,7 @@ void RussianBigMuffAudioProcessor::prepareToPlay (double sampleRate, int samples
 void RussianBigMuffAudioProcessor::releaseResources()
 {
     oversampling.reset();
+    rbm_reset (&core);
 }
 
 bool RussianBigMuffAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -108,7 +96,6 @@ void RussianBigMuffAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     if (numCh <= 0 || numSamples <= 0)
         return;
 
-    // One circuit, like the real pedal: sum to mono, then copy out
     if (numCh > 1)
     {
         auto* left = buffer.getWritePointer (0);
@@ -124,9 +111,9 @@ void RussianBigMuffAudioProcessor::processBlock (juce::AudioBuffer<float>& buffe
     }
 
     const float sustain = sustainParam->load (std::memory_order_relaxed);
-    const float tone    = toneParam->load (std::memory_order_relaxed);
-    const float volume  = volumeParam->load (std::memory_order_relaxed);
-    const float input   = inputParam->load (std::memory_order_relaxed);
+    const float tone    = toneParam->load    (std::memory_order_relaxed);
+    const float volume  = volumeParam->load  (std::memory_order_relaxed);
+    const float input   = inputParam->load   (std::memory_order_relaxed);
 
     juce::dsp::AudioBlock<float> block (buffer);
     auto monoBlock = block.getSingleChannelBlock (0);

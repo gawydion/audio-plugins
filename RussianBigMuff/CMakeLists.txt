@@ -30,7 +30,7 @@ juce_add_plugin(RussianBigMuff
     PLUGIN_CODE RuBM
     FORMATS ${RBM_FORMATS}
     PRODUCT_NAME "Russian Big Muff"
-    PLUGIN_DESCRIPTION "Russian Big Muff style 3-stage diode fuzz"
+    PLUGIN_DESCRIPTION "Sovtek Green Russian Big Muff guitar fuzz"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
@@ -44,12 +44,12 @@ juce_add_plugin(RussianBigMuff
 
 target_sources(RussianBigMuff
     PRIVATE
+        Source/rbm_core.c
+        Source/rbm_core.h
         Source/PluginProcessor.cpp
         Source/PluginProcessor.h
         Source/PluginEditor.cpp
         Source/PluginEditor.h
-        Source/rbm_core.c
-        Source/rbm_core.h
 )
 
 target_compile_definitions(RussianBigMuff

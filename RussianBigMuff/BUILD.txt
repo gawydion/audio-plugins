@@ -1,5 +1,5 @@
- Russian Big Muff — Green Russian / Sovtek Big Muff
- ==================================================
+Russian Big Muff — Sovtek Green Russian
+=======================================
 
 JUCE 8 plugin. Exports Audio Unit (GarageBand / Logic) and VST3
 (Reaper, Ableton, Cubase, etc.). GarageBand does not load VST.
@@ -29,67 +29,28 @@ Needs: macOS, Xcode (App Store), CMake 3.22+, Git.
      Then reboot GarageBand. On newer macOS you may need to
      codesign the .component (Apple Developer ID) for it to load.
 
-Circuit
-  Sovtek Green Russian, a.k.a. the Kit Rae V7C layout. Four NPN
-  stages, not the three of a New York City Muff:
-
-    Q1  KT3102E   input buffer, modest gain, soft saturation
-    Q2  2N5088    + D1/D2 (KD521 / 1N914) silicon clip
-    Q3  BC549C    + D3/D4, a little more smash
-    Q4             recovery / buffer into the output cap
-    Tone           passive stack between Q3 and Q4
-
-  Emitters are 390 Ω, which is what makes it lower gain and smoother
-  than a NYC Muff's 100–150 Ω.
-
-  The clip stages are coupled through 47 nF. The bass across those
-  caps mostly misses the diodes and passes around them, so the low end
-  stays fat and smooth while the highs get the silicon edge. That
-  coupling is the Russian's signature, and it is why the pedal sounds
-  smoother than the NYC version's 1 µF.
-
-  Feedback is local to each stage — a 470 k collector-to-base resistor
-  with 470 pF across it, rolling each stage off around 28–34 kHz. There
-  is no global feedback path from the Q3 collector back to Q1, and no
-  loop to keep stable.
-
-  Tone stack, passive, between a 20 k + 3.9 nF low-pass (≈2040 Hz) and
-  a 22 k + 10 nF high-pass (≈723 Hz), mixed by a 100 k linear pot:
-    fully CCW  bass
-    noon       mid scoop
-    fully CW   treble
-
-  Output is deliberately quiet and level-matched low. Leave headroom
-  on the amp, and turn the guitar up — this pedal has no gain stage to
-  make up for a weak input signal.
-
 Knobs
-  SUSTAIN — the pot between Q1 and the first clipper. It never shuts
-            off completely; the real 100 k still leaks a little.
-  TONE    — the passive stack mix, as above. CCW bass, noon scoop,
-            CW treble.
-  VOL     — 100 k output pot
-  INPUT   — guitar / pickup level. Not on the pedal; same idea as the
-            Input knob on Silicon Fuzz Face, and this circuit wants a
-            hot signal.
+  SUSTAIN  — drive into the two silicon clip stages
+  TONE     — classic muff stack (bass ← noon scoop → treble)
+  VOL      — output level
+  INPUT    — guitar / pickup level (roll this back like a guitar volume)
 
-Layout
-  Source/rbm_core.c   the whole audio path, plain C, fixed state, no
-                      allocation on the process path
-  Source/PluginProcessor.cpp
-                      JUCE only: AU/VST3 wrapper, parameters, 2x
-                      oversampling, sum-to-mono, state save
-  Source/PluginEditor.cpp
-                      editor and look-and-feel
-
-  To check the core on its own:
-     cc -std=c11 -Wall -Wextra -c Source/rbm_core.c -o /dev/null
+Circuit (Green Russian / V7C)
+  Four NPN stages (KT3102E / 2N5088 / BC549C)
+  Silicon diodes (KD521 / 1N914)
+  390 Ω emitters (less gain than a NYC Muff)
+  47 nF clip coupling (fat, smooth bottom)
+  470 pF feedback caps
+  Tone stack 20 k + 3.9 nF  ||  22 k + 10 nF
 
 GarageBand Smart Controls
-  The blue guitar-track panel is Apple's skin (a couple of mapped knobs
-  + track EQ + sends). A third-party Audio Unit cannot replace that layout.
-  All four knobs are in the real editor: wrench next to Controls / EQ.
-  Track automation lists: Sustain, Tone, Volume, Input
+  The blue guitar-track panel is Apple's skin (not remappable by a
+  third-party AU). All four knobs are in the real editor: wrench next
+  to Controls / EQ. Track automation lists:
+    Sustain, Tone, Volume, Input
 
-Put this first on a guitar track, into a clean or edge-of-breakup amp sim.
+Put this first on a guitar track, into a clean or slightly dirty amp sim.
 It is a mono circuit (stereo is summed).
+
+DSP rule: write in C what can be written in C. See ../C_CORE.txt.
+The process loop lives in Source/rbm_core.c. JUCE is the AU/VST3 shell.

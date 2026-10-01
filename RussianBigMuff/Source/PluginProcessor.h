@@ -2,14 +2,8 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
+#include "rbm_core.h"
 
-extern "C"
-{
-    #include "rbm_core.h"
-}
-
-// JUCE wrapper only. All DSP lives in rbm_core.c; this class owns the
-// oversampler, the parameters, the editor and the saved state.
 class RussianBigMuffAudioProcessor final : public juce::AudioProcessor
 {
 public:
@@ -44,17 +38,17 @@ public:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
 private:
-    RbmCore core;
-
     juce::dsp::Oversampling<float> oversampling { 1, 2,
         juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true, false };
+
+    RbmCore core {};
 
     std::atomic<float>* sustainParam = nullptr;
     std::atomic<float>* toneParam    = nullptr;
     std::atomic<float>* volumeParam  = nullptr;
     std::atomic<float>* inputParam   = nullptr;
 
-    double osRate = 44100.0;
+    double currentSampleRate = 44100.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RussianBigMuffAudioProcessor)
 };

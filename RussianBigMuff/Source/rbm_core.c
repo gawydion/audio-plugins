@@ -55,7 +55,6 @@ static float diode_clip (float x, float thresh)
 {
     const float t = thresh > 1.0e-6f ? thresh : 1.0e-6f;
     const float s = x / t;
-    /* Soft knee; extra 8 % on the negative side. */
     const float k = s >= 0.0f ? 1.00f : 0.92f;
     return t * tanhf (s * k);
 }
@@ -98,8 +97,7 @@ void rbm_prepare (RbmCore* s, float sampleRate)
     onepole_lpf (&s->st1Lpf, fs, 28000.0f);
     onepole_lpf (&s->st2Lpf, fs, 28000.0f);
 
-    /* 47 nF coupling into the clip stages. Bass mostly bypasses
-       the diodes — that is the Russian fat / smooth bottom. */
+    /* 47 nF clip cap: diodes see mids/highs, bass mostly bypasses. */
     onepole_hpf (&s->st1Hpf, fs, 220.0f);
     onepole_hpf (&s->st2Hpf, fs, 220.0f);
 
@@ -108,8 +106,8 @@ void rbm_prepare (RbmCore* s, float sampleRate)
     onepole_lpf (&s->toneLp, fs, 2040.0f);
     onepole_hpf (&s->toneHp, fs,  723.0f);
 
-    /* Q4 collector 10 k + 470 pF ≈ 34 kHz. */
-    onepole_lpf (&s->recLpf, fs, 34000.0f);
+    /* Q4 collector 10 k + 470 pF. */
+    onepole_lpf (&s->recLpf, fs, 24000.0f);
 
     /* C13 100 nF into the 100 k volume pot ≈ 16 Hz. */
     onepole_hpf (&s->outHpf, fs, 16.0f);
@@ -125,56 +123,65 @@ float rbm_process (RbmCore* s, float x,
     volume  = clampf (volume,  0.0f, 1.0f);
     input   = clampf (input,   0.0f, 1.0f);
 
-    /* Pickup / guitar volume. Mild audio taper, roughly unity at 70 %. */
+    /* Pickup / guitar volume. Mild audio taper, unity-ish at the
+       default 70% so a DI guitar actually hits the clippers. */
     x *= input * (0.40f + 0.90f * input);
     x  = onepole_proc (&s->pickupLpf, x);
     x  = onepole_proc (&s->inHpf, x);
 
-    /* Q1 CE input amp. High ceiling — its job is to put voltage on the
-       sustain pot, not to clip. */
+    /* Q1 — CE input amp. Rc 12 k / Re 390 ≈ 29, 470 k shunt FB
+       knocks that down. High ceiling: this stage feeds the pot,
+       it is not the main clipper. */
     x = diode_clip (x * 12.0f, 2.4f);
 
-    /* Sustain pot sits between Q1 collector and the first clipper.
-       100 k linear; it never quite shuts off. */
+    /* Sustain 100 k between Q1 collector and Q2 base.
+       Minimum is not zero — the real pot still leaks. Linear,
+       not squared, or noon never reaches the diodes. */
     const float sus = 0.22f + 0.78f * sustain;
 
-    /* Closed-loop gain of a Green Russian clip stage: 12 k / (390 + re'). */
+    /* Open-loop of a Russian clip stage: Rc 12 k / (Re 390 + re)
+       ≈ 28. NYC uses 100–150 Ω emitters (~2× that). Diodes (KD521
+       / 1N914) clamp the collector at ~0.6 V. */
     const float stageGain = 28.0f;
 
-    /* ---- Clip stage 1 (Q2 + D1/D2) ----
-       47 nF coupling: a LITTLE bass goes around the diodes, not half —
-       that is the difference between a Muff and a plain overdrive. */
+    /* ---- Q2 + D1/D2 ----
+       47 nF clip cap: bass mostly misses the diodes (smooth/fat),
+       mids and highs take the silicon. Small leftover-bass mix so
+       it stays a muff, not an overdrive. */
     {
-        const float drive = x * sus * stageGain;
-        const float hi    = onepole_proc (&s->st1Hpf, drive);
-        const float lo    = drive - hi;          /* bass that misses the clip */
-        x = onepole_proc (&s->st1Lpf, diode_clip (hi, 0.60f) + 0.22f * lo);
+        const float drive   = x * sus * stageGain;
+        const float hi      = onepole_proc (&s->st1Hpf, drive);
+        const float clipped = diode_clip (hi, 0.60f);
+        const float lo      = drive - hi;
+        x = onepole_proc (&s->st1Lpf, clipped + 0.22f * lo);
     }
 
-    /* ---- Clip stage 2 (Q3 + D3/D4) ---- same smash. This is the sustain. */
+    /* ---- Q3 + D3/D4 ----
+       Same stage again. Second smash is why a Muff sustains. */
     {
-        const float drive = x * stageGain;
-        const float hi    = onepole_proc (&s->st2Hpf, drive);
-        const float lo    = drive - hi;
-        x = onepole_proc (&s->st2Lpf, diode_clip (hi, 0.56f) + 0.18f * lo);
+        const float drive   = x * stageGain;
+        const float hi      = onepole_proc (&s->st2Hpf, drive);
+        const float clipped = diode_clip (hi, 0.56f);
+        const float lo      = drive - hi;
+        x = onepole_proc (&s->st2Lpf, clipped + 0.18f * lo);
     }
 
-    /* Passive BMP tone stack. CCW = bass (LP), CW = treble (HP).
-       Noon mixes both and scoops the mids. */
+    /* Passive BMP tone stack. CCW = bass, noon = mid scoop, CW =
+       treble. Insertion loss is huge (~20 dB at noon) — Q4 exists
+       to pay that back. */
     {
         const float lp = onepole_proc (&s->toneLp, x);
         const float hp = onepole_proc (&s->toneHp, x);
         x = (1.0f - tone) * lp + tone * hp;
+        x *= 8.5f;
     }
 
-    /* The stack dumps a lot; this pays it back. */
-    x *= 8.5f;
-
-    /* Q4 recovery. Rc 10 k / Re 2 k ≈ 5, plus 470 k feedback. */
+    /* Q4 recovery. Rc 10 k / Re 2 k ≈ 5. Soft clip at the rail. */
     x = onepole_proc (&s->recLpf, diode_clip (x * 5.0f, 1.55f));
     x = onepole_proc (&s->outHpf, x);
 
-    /* Volume 100 k, audio-ish taper. */
-    x *= volume * (0.35f + 0.95f * volume);
+    /* Volume 100 k, audio-ish taper, then a −12 dB pad.
+       Same fuzz, just not slamming the next plugin. */
+    x *= volume * (0.35f + 0.95f * volume) * 0.2512f;
     return x;
 }
