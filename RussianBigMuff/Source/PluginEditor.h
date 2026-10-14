@@ -25,11 +25,14 @@ private:
     RussianBigMuffLookAndFeel lnf;
 
     juce::Slider sustainSlider, toneSlider, volumeSlider, inputSlider;
+    juce::Slider inGainSlider, outGainSlider;
     juce::Label  sustainLabel,  toneLabel,  volumeLabel,  inputLabel;
+    juce::Label  inGainLabel, outGainLabel;
     juce::Label  titleLabel, subLabel;
 
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     std::unique_ptr<Attachment> sustainAttach, toneAttach, volumeAttach, inputAttach;
+    std::unique_ptr<Attachment> inGainAttach, outGainAttach;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RussianBigMuffAudioProcessorEditor)
 };
