@@ -225,26 +225,26 @@ void BrownEyeODAudioProcessor::processMonoSample (float& x) noexcept
     // Stage 1 — non-inverting, red LED pair in the feedback loop.
     // Fixed modest gain, high clip threshold (LED ~1.7 V).
     {
-        const float s1 = x * 3.4f;
-        x = diodeClip (s1, 1.55f);
+        const float s1 = x * 4.8f;
+        x = diodeClip (s1, 1.45f);
     }
 
     // Stage 2 — non-inverting, Gain pot in the feedback, red LEDs.
     // 47 nF-ish recovery HPF is already covered by Tight + input.
     {
-        const float g2 = juce::jmap (gain * gain, 2.2f, 14.0f);
-        x = diodeClip (x * g2, 1.45f);
+        const float g2 = juce::jmap (gain * gain, 3.8f, 32.0f);
+        x = diodeClip (x * g2, 1.35f);
     }
 
     // Stage 3 — inverting, 1N4148 / BAV99 pair + 22k knee resistor.
     // Lower threshold, sharper than the LEDs. Gain about 10.
     {
-        x = diodeClip (x * -9.5f, 0.68f);
+        x = diodeClip (x * -13.5f, 0.62f);
     }
 
     // Stage 4 — inverting, 10k + 100k trim. Gain 1 → ~11.
     {
-        const float g4 = juce::jmap (trim, 1.15f, 10.5f);
+        const float g4 = juce::jmap (trim, 1.25f, 12.5f);
         x *= -g4;
     }
 
