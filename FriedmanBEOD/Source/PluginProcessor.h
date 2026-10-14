@@ -58,6 +58,8 @@ private:
     std::atomic<float>* trebleParam   = nullptr;
     std::atomic<float>* presenceParam = nullptr;
     std::atomic<float>* trimParam     = nullptr;
+    std::atomic<float>* inGainParam   = nullptr;
+    std::atomic<float>* outGainParam  = nullptr;
 
     float lastTight    = -1.0f;
     float lastPresence = -1.0f;

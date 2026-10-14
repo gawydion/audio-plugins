@@ -39,7 +39,7 @@ BrownEyeODAudioProcessorEditor::BrownEyeODAudioProcessorEditor (BrownEyeODAudioP
     : AudioProcessorEditor (&p), processor (p)
 {
     setLookAndFeel (&lnf);
-    setSize (520, 360);
+    setSize (520, 490);
 
     auto setupKnob = [this] (juce::Slider& s, juce::Label& l, const juce::String& name)
     {
@@ -63,6 +63,8 @@ BrownEyeODAudioProcessorEditor::BrownEyeODAudioProcessorEditor (BrownEyeODAudioP
     setupKnob (gainSlider,     gainLabel,     "GAIN");
     setupKnob (volumeSlider,   volumeLabel,   "VOL");
     setupKnob (tightSlider,    tightLabel,    "TIGHT");
+    setupKnob (inGainSlider,   inGainLabel,   "IN GAIN");
+    setupKnob (outGainSlider,  outGainLabel,  "OUT GAIN");
 
     titleLabel.setText ("BROWN EYE OD", juce::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
@@ -70,7 +72,7 @@ BrownEyeODAudioProcessorEditor::BrownEyeODAudioProcessorEditor (BrownEyeODAudioP
     titleLabel.setFont (juce::Font (juce::FontOptions (22.0f)).boldened());
     addAndMakeVisible (titleLabel);
 
-    subLabel.setText ("BE-100  ·  Grok Audio", juce::dontSendNotification);
+    subLabel.setText ("BE-100 - Grok Audio", juce::dontSendNotification);
     subLabel.setJustificationType (juce::Justification::centred);
     subLabel.setColour (juce::Label::textColourId, juce::Colour (0xffc9b48a));
     subLabel.setFont (juce::Font (juce::FontOptions (12.0f)));
@@ -83,6 +85,8 @@ BrownEyeODAudioProcessorEditor::BrownEyeODAudioProcessorEditor (BrownEyeODAudioP
     gainAttach     = std::make_unique<Attachment> (processor.apvts, "gain",     gainSlider);
     volumeAttach   = std::make_unique<Attachment> (processor.apvts, "volume",   volumeSlider);
     tightAttach    = std::make_unique<Attachment> (processor.apvts, "tight",    tightSlider);
+    inGainAttach   = std::make_unique<Attachment> (processor.apvts, "inGain",   inGainSlider);
+    outGainAttach  = std::make_unique<Attachment> (processor.apvts, "outGain",  outGainSlider);
 }
 
 BrownEyeODAudioProcessorEditor::~BrownEyeODAudioProcessorEditor()
@@ -133,7 +137,11 @@ void BrownEyeODAudioProcessorEditor::resized()
     juce::Label*  topL[] = { &bassLabel,  &trebleLabel,  &presenceLabel,  &trimLabel };
     placeRow (topS, topL, 4);
 
-    juce::Slider* botS[] = { &gainSlider, &volumeSlider, &tightSlider };
-    juce::Label*  botL[] = { &gainLabel,  &volumeLabel,  &tightLabel };
-    placeRow (botS, botL, 3);
+    juce::Slider* midS[] = { &gainSlider, &volumeSlider, &tightSlider };
+    juce::Label*  midL[] = { &gainLabel,  &volumeLabel,  &tightLabel };
+    placeRow (midS, midL, 3);
+
+    juce::Slider* botS[] = { &inGainSlider, &outGainSlider };
+    juce::Label*  botL[] = { &inGainLabel,  &outGainLabel };
+    placeRow (botS, botL, 2);
 }
