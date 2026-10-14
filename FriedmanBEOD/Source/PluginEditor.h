@@ -26,14 +26,17 @@ private:
 
     juce::Slider gainSlider, volumeSlider, tightSlider;
     juce::Slider bassSlider, trebleSlider, presenceSlider, trimSlider;
+    juce::Slider inGainSlider, outGainSlider;
 
     juce::Label gainLabel, volumeLabel, tightLabel;
     juce::Label bassLabel, trebleLabel, presenceLabel, trimLabel;
+    juce::Label inGainLabel, outGainLabel;
     juce::Label titleLabel, subLabel;
 
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     std::unique_ptr<Attachment> gainAttach, volumeAttach, tightAttach;
     std::unique_ptr<Attachment> bassAttach, trebleAttach, presenceAttach, trimAttach;
+    std::unique_ptr<Attachment> inGainAttach, outGainAttach;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BrownEyeODAudioProcessorEditor)
 };
