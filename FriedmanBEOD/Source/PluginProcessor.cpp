@@ -37,6 +37,8 @@ BrownEyeODAudioProcessor::BrownEyeODAudioProcessor()
     trebleParam   = apvts.getRawParameterValue ("treble");
     presenceParam = apvts.getRawParameterValue ("presence");
     trimParam     = apvts.getRawParameterValue ("trim");
+    inGainParam   = apvts.getRawParameterValue ("inGain");
+    outGainParam  = apvts.getRawParameterValue ("outGain");
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout
@@ -82,6 +84,30 @@ BrownEyeODAudioProcessor::createParameterLayout()
         juce::ParameterID { "presence", 1 }, "Presence", norm, 0.40f, attr (Cat::genericParameter)));
     params.push_back (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { "trim", 1 }, "Trim", norm, 0.45f, attr (Cat::genericParameter)));
+
+    const auto dbRange = juce::NormalisableRange<float> (-15.0f, 15.0f, 0.1f);
+    const auto dbText = [] (float v, int)
+    {
+        return juce::String (v, 1) + " dB";
+    };
+    const auto dbParse = [] (const juce::String& t)
+    {
+        return t.getFloatValue();
+    };
+
+    auto dbAttr = [&] (juce::AudioProcessorParameter::Category cat)
+    {
+        return juce::AudioParameterFloatAttributes()
+            .withLabel ("dB")
+            .withCategory (cat)
+            .withStringFromValueFunction (dbText)
+            .withValueFromStringFunction (dbParse);
+    };
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "inGain", 1 }, "Input Gain", dbRange, 0.0f, dbAttr (Cat::inputGain)));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "outGain", 1 }, "Output Gain", dbRange, 0.0f, dbAttr (Cat::outputGain)));
 
     return { params.begin(), params.end() };
 }
@@ -267,6 +293,11 @@ void BrownEyeODAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     const float presence = presenceParam->load (std::memory_order_relaxed);
     const float treble   = trebleParam->load (std::memory_order_relaxed);
     const float bass     = bassParam->load (std::memory_order_relaxed);
+    const float inGainDb  = inGainParam->load  (std::memory_order_relaxed);
+    const float outGainDb = outGainParam->load (std::memory_order_relaxed);
+
+    const float inLin  = juce::Decibels::decibelsToGain (inGainDb);
+    const float outLin = juce::Decibels::decibelsToGain (outGainDb);
 
     if (std::abs (tight - lastTight) > 0.0015f
         || std::abs (presence - lastPresence) > 0.0015f
@@ -274,6 +305,14 @@ void BrownEyeODAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         || std::abs (bass - lastBass) > 0.0015f)
     {
         updateFilters (osRate);
+    }
+
+    // Apply input gain before oversampling / core
+    if (inLin != 1.0f)
+    {
+        auto* left = buffer.getWritePointer (0);
+        for (int i = 0; i < numSamples; ++i)
+            left[i] *= inLin;
     }
 
     juce::dsp::AudioBlock<float> block (buffer);
@@ -287,6 +326,14 @@ void BrownEyeODAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         processMonoSample (samples[i]);
 
     oversampling.processSamplesDown (monoBlock);
+
+    // Apply output gain after downsampling
+    if (outLin != 1.0f)
+    {
+        auto* left = buffer.getWritePointer (0);
+        for (int i = 0; i < numSamples; ++i)
+            left[i] *= outLin;
+    }
 
     auto* mono = buffer.getReadPointer (0);
     for (int ch = 1; ch < numCh; ++ch)
