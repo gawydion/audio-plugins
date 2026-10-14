@@ -47,6 +47,8 @@ private:
     std::atomic<float>* toneParam    = nullptr;
     std::atomic<float>* volumeParam  = nullptr;
     std::atomic<float>* inputParam   = nullptr;
+    std::atomic<float>* inGainParam  = nullptr;
+    std::atomic<float>* outGainParam = nullptr;
 
     double currentSampleRate = 44100.0;
 
