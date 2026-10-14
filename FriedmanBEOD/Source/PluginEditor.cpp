@@ -72,7 +72,7 @@ BrownEyeODAudioProcessorEditor::BrownEyeODAudioProcessorEditor (BrownEyeODAudioP
     titleLabel.setFont (juce::Font (juce::FontOptions (22.0f)).boldened());
     addAndMakeVisible (titleLabel);
 
-    subLabel.setText ("BE-100  ·  Grok Audio", juce::dontSendNotification);
+    subLabel.setText ("BE-100 - Grok Audio", juce::dontSendNotification);
     subLabel.setJustificationType (juce::Justification::centred);
     subLabel.setColour (juce::Label::textColourId, juce::Colour (0xffc9b48a));
     subLabel.setFont (juce::Font (juce::FontOptions (12.0f)));
