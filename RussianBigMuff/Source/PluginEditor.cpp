@@ -69,7 +69,7 @@ RussianBigMuffAudioProcessorEditor::RussianBigMuffAudioProcessorEditor (RussianB
     titleLabel.setFont (juce::Font (juce::FontOptions (22.0f)).boldened());
     addAndMakeVisible (titleLabel);
 
-    subLabel.setText ("Sovtek Green Russian  ·  Grok Audio", juce::dontSendNotification);
+    subLabel.setText ("Sovtek Green Russian - Grok Audio", juce::dontSendNotification);
     subLabel.setJustificationType (juce::Justification::centred);
     subLabel.setColour (juce::Label::textColourId, juce::Colour (0xffa8b07a));
     subLabel.setFont (juce::Font (juce::FontOptions (12.0f)));
