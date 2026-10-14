@@ -39,7 +39,7 @@ RussianBigMuffAudioProcessorEditor::RussianBigMuffAudioProcessorEditor (RussianB
     : AudioProcessorEditor (&p), processor (p)
 {
     setLookAndFeel (&lnf);
-    setSize (480, 280);
+    setSize (480, 420);
 
     auto setupKnob = [this] (juce::Slider& s, juce::Label& l, const juce::String& name)
     {
@@ -60,6 +60,8 @@ RussianBigMuffAudioProcessorEditor::RussianBigMuffAudioProcessorEditor (RussianB
     setupKnob (toneSlider,    toneLabel,    "TONE");
     setupKnob (volumeSlider,  volumeLabel,  "VOL");
     setupKnob (inputSlider,   inputLabel,   "INPUT");
+    setupKnob (inGainSlider,  inGainLabel,  "IN GAIN");
+    setupKnob (outGainSlider, outGainLabel, "OUT GAIN");
 
     titleLabel.setText ("RUSSIAN BIG MUFF", juce::dontSendNotification);
     titleLabel.setJustificationType (juce::Justification::centred);
@@ -67,7 +69,7 @@ RussianBigMuffAudioProcessorEditor::RussianBigMuffAudioProcessorEditor (RussianB
     titleLabel.setFont (juce::Font (juce::FontOptions (22.0f)).boldened());
     addAndMakeVisible (titleLabel);
 
-    subLabel.setText ("Sovtek Green Russian  ·  Grok Audio", juce::dontSendNotification);
+    subLabel.setText ("Sovtek Green Russian - Grok Audio", juce::dontSendNotification);
     subLabel.setJustificationType (juce::Justification::centred);
     subLabel.setColour (juce::Label::textColourId, juce::Colour (0xffa8b07a));
     subLabel.setFont (juce::Font (juce::FontOptions (12.0f)));
@@ -77,6 +79,8 @@ RussianBigMuffAudioProcessorEditor::RussianBigMuffAudioProcessorEditor (RussianB
     toneAttach    = std::make_unique<Attachment> (processor.apvts, "tone",    toneSlider);
     volumeAttach  = std::make_unique<Attachment> (processor.apvts, "volume",  volumeSlider);
     inputAttach   = std::make_unique<Attachment> (processor.apvts, "input",   inputSlider);
+    inGainAttach  = std::make_unique<Attachment> (processor.apvts, "inGain",  inGainSlider);
+    outGainAttach = std::make_unique<Attachment> (processor.apvts, "outGain", outGainSlider);
 }
 
 RussianBigMuffAudioProcessorEditor::~RussianBigMuffAudioProcessorEditor()
@@ -107,18 +111,44 @@ void RussianBigMuffAudioProcessorEditor::resized()
 
     const int knob = 96;
     const int labelH = 20;
-    auto row = r.removeFromTop (knob + labelH);
-    const int count = 4;
-    const int gap = (row.getWidth() - knob * count) / (count + 1);
+    const int rowH = knob + labelH;
 
-    juce::Slider* sliders[] = { &sustainSlider, &toneSlider, &volumeSlider, &inputSlider };
-    juce::Label*  labels[]  = { &sustainLabel,  &toneLabel,  &volumeLabel,  &inputLabel };
-
-    for (int i = 0; i < count; ++i)
+    // Top row: original 4 knobs
     {
-        row.removeFromLeft (gap);
-        auto cell = row.removeFromLeft (knob);
-        sliders[i]->setBounds (cell.removeFromTop (knob));
-        labels[i]->setBounds (cell);
+        auto row = r.removeFromTop (rowH);
+        const int count = 4;
+        const int gap = (row.getWidth() - knob * count) / (count + 1);
+
+        juce::Slider* sliders[] = { &sustainSlider, &toneSlider, &volumeSlider, &inputSlider };
+        juce::Label*  labels[]  = { &sustainLabel,  &toneLabel,  &volumeLabel,  &inputLabel };
+
+        for (int i = 0; i < count; ++i)
+        {
+            row.removeFromLeft (gap);
+            auto cell = row.removeFromLeft (knob);
+            sliders[i]->setBounds (cell.removeFromTop (knob));
+            labels[i]->setBounds (cell);
+        }
+    }
+
+    r.removeFromTop (12);
+
+    // Bottom row: two gain knobs, centered
+    {
+        auto row = r.removeFromTop (rowH);
+        const int count = 2;
+        const int totalKnob = knob * count;
+        const int gap = (row.getWidth() - totalKnob) / (count + 1);
+
+        juce::Slider* sliders[] = { &inGainSlider, &outGainSlider };
+        juce::Label*  labels[]  = { &inGainLabel,  &outGainLabel };
+
+        for (int i = 0; i < count; ++i)
+        {
+            row.removeFromLeft (gap);
+            auto cell = row.removeFromLeft (knob);
+            sliders[i]->setBounds (cell.removeFromTop (knob));
+            labels[i]->setBounds (cell);
+        }
     }
 }
