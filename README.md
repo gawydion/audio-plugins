@@ -32,6 +32,7 @@ Each plugin is a self-contained JUCE 8 project in its own subdirectory:
 | Silicon Fuzz Face | [`SiliconFuzzFace/`](SiliconFuzzFace/) | `SiliconFuzzFace` | `SiFF` | AU, VST3, Standalone |
 | Brown Eye OD | [`FriedmanBEOD/`](FriedmanBEOD/) | `BrownEyeOD` | `BeOD` | AU, VST3, Standalone |
 | Russian Big Muff | [`RussianBigMuff/`](RussianBigMuff/) | `RussianBigMuff` | `RuBM` | AU, VST3, Standalone |
+| Model T | [`ModelT/`](ModelT/) | `ModelT` | `MoDT` | AU, VST3, Standalone |
 
 Note the mismatch in Brown Eye OD: the directory is `FriedmanBEOD` (a BE-OD
 name) while the target, bundle ID and product name all use `BrownEyeOD` /
@@ -108,6 +109,30 @@ Volume near maximum the last clip stage and the tone-stack makeup can push the
 output past full scale — leave headroom on the amp and expect the host to clip
 the peaks.
 
+## Model T
+
+High-headroom amp sim of the early-70s Model T (Rev A), in [`ModelT/`](ModelT/).
+Not the 1990s Fender reissue. Behavioral model: dual Bright / Normal triodes,
+mixer stage, passive Bassman-style stack, presence in the feedback loop,
+ultralinear 6550 power stage with a stiff supply and little sag, closed-back
+4x12 cab filter. The audio path lives in `Source/mt_core.c`.
+
+`Jump` is the fifth-hole center jack: on feeds both channels so Bright and
+Normal become a blend; off is Bright only. Master is the headroom control —
+low stays clean, high is the thick power-tube grind. Input Gain and Output Gain
+are the same ±15 dB knobs as Russian Big Muff, applied outside the core.
+
+- `Bright` — bright channel volume
+- `Normal` — normal channel volume (Jump on)
+- `Bass`, `Treble` — tone stack
+- `Presence` — HF lift in the NFB loop
+- `Master` — power-amp drive / headroom
+- `Jump` — fifth-hole both-channels input
+- `Input Gain`, `Output Gain` — ±15 dB, same as Russian Big Muff
+
+Fixed output pad about −12 dB. Put a fuzz in front for the doom sound. Mono
+circuit: stereo is summed. Runs 2x oversampled.
+
 ## Building
 
 Requires macOS, CMake 3.22+, Git, and the Xcode Command Line Tools
@@ -115,7 +140,7 @@ Requires macOS, CMake 3.22+, Git, and the Xcode Command Line Tools
 configure.
 
 ```sh
-cd SiliconFuzzFace   # or: cd FriedmanBEOD / cd RussianBigMuff
+cd SiliconFuzzFace   # or: cd FriedmanBEOD / cd RussianBigMuff / cd ModelT
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j"$(sysctl -n hw.ncpu)"
 ```
@@ -132,7 +157,7 @@ plug-in folders automatically (`COPY_PLUGIN_AFTER_BUILD`):
 - `~/Library/Audio/Plug-Ins/VST3/` — VST3 (Reaper, Ableton, Cubase…)
 
 Builds are universal (`arm64` + `x86_64`) with a macOS 11.0 deployment target.
-Each plugin builds and installs independently; all three share the `GrkA`
+Each plugin builds and installs independently; all share the `GrkA`
 manufacturer code but use distinct plugin codes, so they can be installed side
 by side.
 
@@ -142,6 +167,7 @@ by side.
 auval -v aufx SiFF GrkA   # Silicon Fuzz Face
 auval -v aufx BeOD GrkA   # Brown Eye OD
 auval -v aufx RuBM GrkA   # Russian Big Muff
+auval -v aufx MoDT GrkA   # Model T
 ```
 
 In GarageBand: Settings → Audio/MIDI → enable Audio Units, then
