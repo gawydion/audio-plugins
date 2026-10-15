@@ -1,0 +1,63 @@
+Model T — high-headroom amp
+===========================
+
+JUCE 8 plugin. Exports Audio Unit (GarageBand / Logic) and VST3
+(Reaper, Ableton, Cubase, etc.). GarageBand does not load VST.
+
+Needs: macOS, Xcode (App Store), CMake 3.22+, Git.
+
+1. Install CMake if needed:
+     brew install cmake
+
+2. In Terminal, from this folder:
+
+     cmake -B build -G Xcode
+     cmake --build build --config Release
+
+   First run downloads JUCE 8 and takes several minutes.
+
+3. After a successful build, plugins are copied to:
+     ~/Library/Audio/Plug-Ins/Components/Model T.component
+     ~/Library/Audio/Plug-Ins/VST3/Model T.vst3
+
+4. GarageBand
+     Settings → Audio/MIDI → enable Audio Units
+     Smart Controls → plugin slot → Audio Units → Grok Audio → Model T
+
+5. If GarageBand does not see it:
+     auval -v aufx MoDT GrkA
+     Then reboot GarageBand. On newer macOS you may need to
+     codesign the .component (Apple Developer ID) for it to load.
+
+Knobs
+  BRIGHT    — bright channel volume (treble-emphasised triode)
+  NORMAL    — normal channel volume (darker). Only fed when Jump is on
+  BASS      — tone-stack bass
+  TREBLE    — tone-stack treble
+  PRESENCE  — high-frequency lift in the feedback loop
+  MASTER    — headroom. Low is clean and huge, high is thick power-tube grind
+  JUMP      — fifth-hole center jack. On feeds both channels; off is Bright only
+  IN GAIN   — ±15 dB into the preamp, same knob as Russian Big Muff
+  OUT GAIN  — ±15 dB after the cab and the fixed pad, same knob as Russian Big Muff
+
+Circuit (behavioral, early-70s Rev A — not the 1990s Fender reissue)
+  Dual Bright / Normal 12AX7 stages, summed into a mixer triode
+  Passive Bassman-style stack (fixed mid dip)
+  Presence in the negative-feedback loop
+  Quad-6550 ultralinear power stage, solid-state supply, little sag
+  Closed-back 4x12 cab filter
+  Fixed output pad about −12 dB
+
+GarageBand Smart Controls
+  The blue guitar-track panel is Apple's skin (not remappable by a
+  third-party AU). All knobs are in the real editor: wrench next
+  to Controls / EQ. Track automation lists:
+    Bright, Normal, Bass, Treble, Presence, Master, Jump,
+    Input Gain, Output Gain
+
+Put a fuzz in front of it (Silicon Fuzz Face, Russian Big Muff) for
+the thick doom sound. Master stays the headroom control.
+It is a mono circuit (stereo is summed).
+
+DSP rule: write in C what can be written in C. See ../C_CORE.txt.
+The process loop lives in Source/mt_core.c. JUCE is the AU/VST3 shell.
