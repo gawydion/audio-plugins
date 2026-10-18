@@ -1,0 +1,13 @@
+Twin Preamp
+=============
+
+Blackface Twin Reverb style preamp + spring reverb.
+JUCE 8, AU + VST3, manufacturer GrkA, plugin code TwPr.
+
+Build (Mac):
+  cmake -B build -G Xcode
+  cmake --build build --config Release
+
+Or with Ninja / Make after configuring.
+
+Source is C core (twp_core.c) for the audio path + JUCE wrapper.
