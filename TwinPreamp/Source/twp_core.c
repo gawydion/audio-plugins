@@ -115,17 +115,19 @@ void twp_prepare (TwpCore* s, float sampleRate)
     twp_reset (s);
 }
 
+/* read_delay: write is the next write position (sample about to be overwritten is delay == len) */
 static float read_delay (const float* buf, int len, int write, float delaySamples)
 {
     float d = delaySamples;
     if (d < 1.0f) d = 1.0f;
-    if (d > (float)(len - 2)) d = (float)(len - 2);
+    if (d > (float) len) d = (float) len;
 
     int id = (int) d;
     float frac = d - (float) id;
 
     int i0 = write - id;
     while (i0 < 0) i0 += len;
+    i0 %= len;
     int i1 = i0 - 1;
     if (i1 < 0) i1 += len;
 
@@ -177,10 +179,12 @@ float twp_process (TwpCore* s, float x,
             const int len = s->springLen[i];
             int wr = s->springWrite[i];
 
-            buf[wr] = send;
-
-            const float dly = (float) len + mod * (0.4f + 0.15f * i);
+            /* Read delayed sample first (wr is next write position) */
+            const float dly = (float) len + mod * (0.4f + 0.15f * (float) i);
             wet += read_delay (buf, len, wr, dly) * weights[i];
+
+            /* Then write current send */
+            buf[wr] = send;
 
             wr = (wr + 1) % len;
             s->springWrite[i] = wr;
