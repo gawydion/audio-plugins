@@ -72,8 +72,11 @@ void twp_reset (TwpCore* s)
     onepole_clear (&s->postHpf);
     onepole_clear (&s->springHpf);
 
-    for (int i = 0; i < 4; ++i)
-        s->springIdx[i] = 0;
+    for (int i = 0; i < TWP_SPRING_TAPS; ++i)
+    {
+        memset (s->springBuf[i], 0, sizeof (s->springBuf[i]));
+        s->springWrite[i] = 0;
+    }
     s->springPhase = 0.0f;
 }
 
@@ -91,7 +94,7 @@ void twp_prepare (TwpCore* s, float sampleRate)
     /* Approximate Fender TMB shelves / bands */
     onepole_lpf (&s->toneBass,   fs,  180.0f);
     onepole_hpf (&s->toneMid,    fs,  400.0f);
-    onepole_lpf (&s->toneMid,    fs, 1200.0f); /* reuse? simple */
+    onepole_lpf (&s->toneMid,    fs, 1200.0f);
     onepole_hpf (&s->toneTreble, fs, 2500.0f);
 
     onepole_hpf (&s->postHpf, fs, 20.0f);
@@ -99,17 +102,34 @@ void twp_prepare (TwpCore* s, float sampleRate)
     /* Spring send high-pass (500 pF style ~ a few hundred Hz) */
     onepole_hpf (&s->springHpf, fs, 280.0f);
 
-    /* Simple 4-tap spring lengths (samples). Tune for ~30–80 ms spread. */
-    const float ms[4] = { 28.0f, 42.0f, 61.0f, 85.0f };
-    for (int i = 0; i < 4; ++i)
+    /* Multi-tap spring lengths (samples). ~30–85 ms spread for drip. */
+    const float ms[TWP_SPRING_TAPS] = { 32.0f, 48.0f, 67.0f, 91.0f };
+    for (int i = 0; i < TWP_SPRING_TAPS; ++i)
     {
         s->springLen[i] = (int) (fs * ms[i] * 0.001f);
-        if (s->springLen[i] < 32) s->springLen[i] = 32;
-        if (s->springLen[i] > 8192) s->springLen[i] = 8192;
-        s->springIdx[i] = 0;
+        if (s->springLen[i] < 64) s->springLen[i] = 64;
+        if (s->springLen[i] > TWP_SPRING_MAX - 1) s->springLen[i] = TWP_SPRING_MAX - 1;
+        s->springWrite[i] = 0;
     }
 
     twp_reset (s);
+}
+
+static float read_delay (const float* buf, int len, int write, float delaySamples)
+{
+    float d = delaySamples;
+    if (d < 1.0f) d = 1.0f;
+    if (d > (float)(len - 2)) d = (float)(len - 2);
+
+    int id = (int) d;
+    float frac = d - (float) id;
+
+    int i0 = write - id;
+    while (i0 < 0) i0 += len;
+    int i1 = i0 - 1;
+    if (i1 < 0) i1 += len;
+
+    return buf[i0] * (1.0f - frac) + buf[i1] * frac;
 }
 
 float twp_process (TwpCore* s, float x,
@@ -121,50 +141,59 @@ float twp_process (TwpCore* s, float x,
     treble = clampf (treble, 0.0f, 1.0f);
     reverb = clampf (reverb, 0.0f, 1.0f);
 
-    /* Input stage */
+    /* Input stage — higher base gain for usable level */
     x = onepole_proc (&s->inHpf, x);
-    x = tube_stage (x, 2.2f + 6.0f * volume, 1.4f);
+    x = tube_stage (x, 3.5f + 8.0f * volume, 1.6f);
 
-    /* Very simple TMB approximation (not full interactive, but Fender-ish) */
+    /* Simple TMB approximation */
     {
-        const float b = onepole_proc (&s->toneBass,   x) * (0.4f + 1.2f * bass);
-        const float t = onepole_proc (&s->toneTreble, x) * (0.5f + 1.5f * treble);
-        const float m = x * (0.6f + 0.8f * mid);
-        x = b + m * 0.45f + t;
-        x *= 0.55f; /* insertion loss compensation */
+        const float b = onepole_proc (&s->toneBass,   x) * (0.5f + 1.4f * bass);
+        const float t = onepole_proc (&s->toneTreble, x) * (0.6f + 1.6f * treble);
+        const float m = x * (0.7f + 0.9f * mid);
+        x = b + m * 0.5f + t;
+        x *= 0.7f; /* milder insertion-loss compensation */
     }
 
-    x = tube_stage (x, 1.8f, 1.6f);
+    x = tube_stage (x, 2.2f, 1.8f);
     x = onepole_proc (&s->postHpf, x);
 
-    /* Spring */
+    /* Spring reverb */
     float wet = 0.0f;
     if (reverb > 0.001f)
     {
         float send = onepole_proc (&s->springHpf, x);
-        send = tube_stage (send, 3.5f, 0.9f); /* mild drive into springs */
+        send = tube_stage (send, 2.8f, 1.0f);
 
-        /* Four delayed taps with slight modulation for flutter */
-        s->springPhase += 0.0008f;
-        if (s->springPhase > 6.28f) s->springPhase -= 6.28f;
-        const float mod = 0.0025f * sinf (s->springPhase);
+        /* Slow LFO for mild flutter */
+        s->springPhase += 0.00035f;
+        if (s->springPhase > 6.2831853f) s->springPhase -= 6.2831853f;
+        const float mod = 3.5f * sinf (s->springPhase); /* ~±3.5 samples */
 
-        for (int i = 0; i < 4; ++i)
+        const float weights[TWP_SPRING_TAPS] = { 0.55f, 0.40f, 0.28f, 0.18f };
+
+        for (int i = 0; i < TWP_SPRING_TAPS; ++i)
         {
+            float* buf = s->springBuf[i];
             const int len = s->springLen[i];
-            int idx = s->springIdx[i];
-            /* simple circular (fixed buffer would be better; here we just delay by index for skeleton) */
-            /* For a real implementation use delay lines. This is a placeholder sum. */
-            wet += send * (0.55f - 0.08f * i);
-            s->springIdx[i] = (idx + 1) % len;
+            int wr = s->springWrite[i];
+
+            buf[wr] = send;
+
+            const float dly = (float) len + mod * (0.4f + 0.15f * i);
+            wet += read_delay (buf, len, wr, dly) * weights[i];
+
+            wr = (wr + 1) % len;
+            s->springWrite[i] = wr;
         }
-        wet *= 0.22f * reverb;
-        /* add a little "boing" transient emphasis */
-        wet += 0.04f * send * reverb * (send > 0.0f ? 1.0f : -0.7f);
+
+        wet *= 0.65f * reverb;
     }
 
     x = x + wet;
-    x = tube_stage (x, 1.4f, 1.8f);
+    x = tube_stage (x, 1.6f, 2.0f);
+
+    /* Makeup so default settings are usable in a DAW (was far too quiet) */
+    x *= 5.5f;
 
     return x;
 }
