@@ -16,6 +16,9 @@
 extern "C" {
 #endif
 
+#define TWP_SPRING_TAPS 4
+#define TWP_SPRING_MAX  8192
+
 typedef struct
 {
     float b0, b1, a1;
@@ -35,10 +38,9 @@ typedef struct
 
     /* Spring */
     TwpOnePole springHpf;
-    float springDelays[4];   /* simple multi-tap spring */
-    int   springIdx[4];
-    int   springLen[4];
-    float springMod;
+    float springBuf[TWP_SPRING_TAPS][TWP_SPRING_MAX];
+    int   springWrite[TWP_SPRING_TAPS];
+    int   springLen[TWP_SPRING_TAPS];
     float springPhase;
 } TwpCore;
 
